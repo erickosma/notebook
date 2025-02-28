@@ -3,7 +3,8 @@ Para artigos publicos
 
 
 
-## Criar Ambiente Virtual com `venv` 
+## 🏗️ Criar Ambiente Virtual com `venv`
+
 ### Criar ambiente virtual
 ```sh 
 python -m venv venv
@@ -24,3 +25,4 @@ pip install jupyter pandas matplotlib
 ```sh
 pip freeze > requirements.txt
 ```
+
