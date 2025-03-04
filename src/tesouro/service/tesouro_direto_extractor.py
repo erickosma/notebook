@@ -73,48 +73,6 @@ class TesouroDiretoExtractor:
         except Exception as e:
             logger.error(f"Erro ao extrair dados do script: {e}")
 
-    def _extrair_titulos_de_divs(self, soup: BeautifulSoup) -> None:
-        """Extrai informações de títulos a partir das divs da página"""
-        div_titulos = soup.find_all('div', class_=lambda c: c and ('card-title' in c or 'titulo' in c or 'tesouro' in c))
-
-        for div in div_titulos:
-            try:
-                nome_titulo = div.get_text().strip()
-                taxa_divs = div.find_next_siblings('div') or div.find_all('div')
-
-                for taxa_div in taxa_divs:
-                    taxa_text = taxa_div.get_text().strip()
-                    taxa_match = re.search(r'(\d+[,.]\d+)\s*%', taxa_text)
-
-                    if not taxa_match:
-                        continue
-
-                    rentabilidade = float(taxa_match.group(1).replace(',', '.'))
-                    vencimento_match = re.search(r'(\d{2}/\d{2}/\d{4}|20\d{2})', nome_titulo)
-
-                    if not vencimento_match:
-                        continue
-
-                    vencimento = vencimento_match.group(1)
-
-                    try:
-                        if len(vencimento) == 4:  # Apenas o ano
-                            vencimento_data = datetime(int(vencimento), 1, 1)
-                        else:
-                            vencimento_data = datetime.strptime(vencimento, '%d/%m/%Y')
-                    except ValueError:
-                        continue
-
-                    titulo = Titulo(nome_titulo, vencimento, vencimento_data, rentabilidade)
-
-                    if TipoTitulo.PREFIXADO in nome_titulo:
-                        self.titulos_prefixados.append(titulo)
-                    elif TipoTitulo.IPCA in nome_titulo:
-                        self.titulos_ipca.append(titulo)
-                    break
-            except Exception as e:
-                logger.warning(f"Erro ao processar div: {e}")
-
     def _extrair_titulos_de_texto(self, soup: BeautifulSoup) -> None:
         """Extrai informações de títulos a partir do texto da página"""
         text = soup.get_text()
@@ -221,11 +179,6 @@ class TesouroDiretoExtractor:
                 continue
             self._extrair_titulos_do_json(script.string)
             break
-
-        # Se a primeira estratégia não funcionar, tenta a segunda
-        if not self.titulos_prefixados and not self.titulos_ipca:
-            logger.info("Tentando extração via divs da página")
-            self._extrair_titulos_de_divs(soup)
 
         # Se a segunda estratégia não funcionar, tenta a terceira
         if not self.titulos_prefixados and not self.titulos_ipca:
